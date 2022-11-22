@@ -1,27 +1,21 @@
 import React, { useEffect, useState } from "react";
 
 import InfoSection from "./style";
-import InfoHeader from "./InfoHeader";
+import CoinSelector from "./CoinSelector";
 import Order from "./InfoOrder";
 import Chart from "./Chart";
-
-import { useAppDispatch, useAppSelector } from "../../hooks/hooks";
-import { changePrice } from "../../reducers/coinSlice";
-// import InfoHeader from "./InfoHeader";
-
 import CoinInfo from "./InfoCoin";
 
+export default function Main () {
 
-export default function InfoSector () {
-
-  const dispatch = useAppDispatch()
-  const coin = useAppSelector((state) => state.coin.now);
+  const [coin, setCoin] = useState('BTC')
+  const [price, setPrice] = useState<number>()
 
   useEffect(() => {
     const webSocket = new WebSocket('wss://api.upbit.com/websocket/v1');
     webSocket.binaryType = 'arraybuffer';
     webSocket.onopen = () => {
-      const str = [{"ticket":"test"},{"type":"ticker","codes":[`KRW-${coin}`, `KRW-ETH`]}]
+      const str = [{"ticket":"test"},{"type":"ticker","codes":[`KRW-${coin}`]}]
       webSocket.send(JSON.stringify(str))
       console.log('connect')
     }
@@ -30,8 +24,8 @@ export default function InfoSector () {
       let enc = new TextDecoder("utf-8");
       let arr = new Uint8Array(evt.data);
       let data = JSON.parse(enc.decode(arr));
-      console.log(data)
-      dispatch(changePrice(data))
+      setPrice(data)
+      console.log(data.trade_price)
     }
 
     return () => {
@@ -39,10 +33,11 @@ export default function InfoSector () {
     }
   }, [coin])
 
+
   return (
     <>
       <InfoSection>
-        <InfoHeader></InfoHeader>
+        <CoinSelector coin={coin} coinChanger={setCoin}></CoinSelector>
         <CoinInfo></CoinInfo>
         <Chart></Chart>
       </InfoSection>
