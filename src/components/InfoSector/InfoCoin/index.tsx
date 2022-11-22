@@ -1,16 +1,33 @@
-import React from "react";
-import { useAppSelector } from "../../../hooks/hooks";
 import { InfoBox, CurrentBox, Price, PriceKRW, FromYesterday, ChangedPrice, TotalInfo, TotalItem } from "./style";
 
-export default function CoinInfo () {
-  const priceObject : any = useAppSelector((state) => state.coin.price);
+interface Information {
+  tradePrice : number,
+  change_price : number,
+  change_rate : number,
+  change : string,
+  high_price : number,
+  highest_52_week_price : number,
+  low_price : number,
+  lowest_52_week_price : number,
+}
 
+export default function CoinInfo (props : Information) {
+  const priceObject = {
+    tradePrice : props.tradePrice,
+    change_price : props.change_price,
+    change_rate : props.change_rate,
+    change : props.change,
+    high_price : props.high_price,
+    highest_52_week_price : props.highest_52_week_price,
+    low_price : props.low_price,
+    lowest_52_week_price : props.lowest_52_week_price,
+  }
   return (
     <>
-      {priceObject.trade_price > 0 && 
+      {priceObject !== undefined && 
       <InfoBox>
         <CurrentBox>
-          <Price fluc={priceObject.change}>{(priceObject.trade_price).toLocaleString()}</Price>
+          <Price fluc={priceObject.change}>{(priceObject.tradePrice).toLocaleString()}</Price>
           <PriceKRW fluc={priceObject.change}>KRW</PriceKRW>
           <div style={{ fontSize: 13 }}>전일대비
             <FromYesterday fluc={priceObject.change}>{`${(priceObject.change_rate * 100).toFixed(2)}%`}</FromYesterday>
