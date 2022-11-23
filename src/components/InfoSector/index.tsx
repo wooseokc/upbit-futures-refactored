@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import InfoSection from "./style";
 import CoinSelector from "./CoinSelector";
 import Order from "./InfoOrder";
-import Chart from "./Chart";
+// import Chart from "./Chart";
 import CoinInfo from "./InfoCoin";
 
 interface data {
@@ -36,7 +36,6 @@ export default function Main () {
       let enc = new TextDecoder("utf-8");
       let arr = new Uint8Array(evt.data);
       let data = JSON.parse(enc.decode(arr));
-      console.log(data)
       setPrice({
         trade_price : data.trade_price,
         change_price : data.change_price,
@@ -71,9 +70,9 @@ export default function Main () {
          low_price={price.low_price}
          lowest_52_week_price={price.lowest_52_week_price}
          ></CoinInfo>}
-        <Chart></Chart>
+        {/* <Chart></Chart> */}
       </InfoSection>
-      <Order></Order>
+      <Order price={price?.trade_price} coin={coin}></Order>
     </>
 
   )

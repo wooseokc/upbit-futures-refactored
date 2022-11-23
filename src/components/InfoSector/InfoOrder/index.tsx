@@ -1,123 +1,179 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "../../../hooks/hooks";
-import useInterval from "../../../hooks/useInterval";
 import { OrderBox, TypeBox ,CategoryInfo, DefaultRadio, Range, EnterIndex ,RangeIndex, RangeTimes, InputBox, ShortButton, LongButton, InputButton } from "./style";
 
-export default function Order () {
-  const [condition, setCondition] = useState('ready');
-  const [budget, setBudget] = useState(10000000);
-  const [leverage, setLeverage] = useState(5);
-  const [coinPrice, setCoinPrice] = useState<number | undefined>(undefined);
-  const [inputValue, setInputValue] = useState('0');
-  const [orderPrice, setOrderPrice] = useState(0);
-  const [enterPrice, setEnterPrice] = useState<number | undefined>(undefined)
-  const [fluctuation, setFluctuation] = useState(0);
-  const [resultPrice, setResultPrice] = useState(0);
-  const [lastResult, setLastResult] = useState<number | undefined>(undefined)
+interface currentPrice {
+  price : number | undefined,
+  coin : string | undefined
+}
 
-  const dispatch = useAppDispatch()
-  const coin = useAppSelector((state) => state.coin.now);
-  const price : any = useAppSelector((state) => state.coin.price)
+interface trade {
+  coinPrice : number , // 실시간 코인가격
+  orderPrice : number, // 주문 금액
+  enterPrice : number, // 거래 진입시 코인가격
+  resultPrice : number, // 거래 종료시 코인가격
+  fluctuation : number, // 변화율
+  lastResult : number // 직전 거래 결과
+}
 
-  useEffect (()=> {
-    setCoinPrice(price.trade_price)
-  }, [price])
+interface conditions {
+  state : string,
+  budget : number,
+  leverage : number,
+  inputValue : string
+}
 
-  // async function apicall() {
-  //   await axios.get(`https://api.upbit.com/v1/ticker?markets=KRW-${coin}`).then(res => {
-  //     setCoinPrice(res.data[0].trade_price)
-  //     dispatch(changePrice(res.data[0]))
-  //   })
-  // } 
-  // useInterval(apicall, 500)
+export default function Order (props : currentPrice) {
+  const [conditions, setConditions] = useState<conditions>({ // 계좌에 관련된 state
+    state : 'ready',
+    budget : 10000000,
+    leverage : 5,
+    inputValue : '0'
+  })
+  const [trade, setTrade] = useState<trade>({ // 거래에 관련된 state
+    coinPrice : 0,
+    orderPrice : 0,
+    enterPrice : 0,
+    resultPrice : 0,
+    fluctuation : 0,
+    lastResult : 0
+  })
+
+  const coin = props.coin
+  const price = props.price as number
 
   useEffect(()=> {
-    if(enterPrice && coinPrice) {
-      
-      if (fluctuation*leverage <-90) {
-        setCondition('ready');
-        setLastResult(-orderPrice)
-        setEnterPrice(undefined)
+    const currentPrice = props.price as number
+    const orderPrice = trade.orderPrice
+    const enterPrice = trade.enterPrice
+    const fluctuation = trade.fluctuation
+    console.log(currentPrice)
+    if (conditions.state === 'ready') {
+      setTrade({
+        ...trade,
+        coinPrice : currentPrice
+      })
+    } else {
+      //청산
+      if (fluctuation*conditions.leverage <-90) {
+        setConditions({
+          ...conditions,
+          state : 'ready'
+        });
+        setTrade({
+          ...trade,
+          lastResult : -orderPrice,
+          enterPrice : 0
+        })
       }
-
-
-      if (condition === 'Long') {
-        setFluctuation(((coinPrice-enterPrice)/enterPrice*100))
-      } else if (condition === 'Short') {
-        setFluctuation(((enterPrice-coinPrice)/enterPrice*100))
+      // 롱 숏 구현
+      if (conditions.state === 'Long') {
+        const currentFluc = (currentPrice - enterPrice) / enterPrice*100
+        setTrade({
+          ...trade,
+          coinPrice : currentPrice,
+          fluctuation : (currentPrice - enterPrice) / enterPrice*100,
+          resultPrice : (Math.floor(orderPrice + (orderPrice * currentFluc * conditions.leverage/100)))
+        }) 
+      } else if (conditions.state === 'Short') {
+        const currentFluc = (enterPrice - currentPrice) / enterPrice*100
+        setTrade({
+          ...trade,
+          coinPrice : currentPrice,
+          fluctuation : (enterPrice - currentPrice) / enterPrice*100,
+          resultPrice : (Math.floor(orderPrice + (orderPrice * currentFluc * conditions.leverage/100)))
+        }) 
       }
-      setResultPrice(Math.floor(orderPrice + (orderPrice*fluctuation*leverage/100)))
     }
-  }, [enterPrice, coinPrice, condition, orderPrice, fluctuation, leverage])
+    console.log(trade)
+    
+  }, [trade.enterPrice, trade.coinPrice, conditions.state, trade.orderPrice, trade.fluctuation, price])
 
   const enterBet = (e: React.MouseEvent<HTMLButtonElement>) => {
-    let enterNumber : number = +(inputValue.replaceAll(',',''));
+    const enterNumber : number = +(conditions.inputValue.replaceAll(',',''));
+    const budget = conditions.budget;
+    let state = conditions.state
     if (enterNumber > 0) {
-      setBudget(money => money - enterNumber)
-      setEnterPrice(coinPrice)
+      setTrade({...trade, enterPrice : price as number, orderPrice : enterNumber})
   
       if(e.currentTarget.innerHTML === 'Long / 상승') {
-        setCondition('Long');
+        state = 'Long'
       } else {
-        setCondition('Short');
+        state = 'Short'
       }
 
-      setInputValue('0')
-  
-      let tmp = inputValue.replaceAll(',','');
-      setOrderPrice(+tmp);
-    } else {
-      return
-    }
+      setConditions({
+        ...conditions,
+        budget : budget - enterNumber,
+        inputValue : '0',
+        state : state
+      })
+    } else return
   }
 
   const exitBet = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setCondition('ready')
-    setBudget(money => money+resultPrice)
-    setEnterPrice(undefined)
-    if (orderPrice) {
-      setLastResult(resultPrice-orderPrice)
-    }
-
+    console.log(trade)
+    const result = trade.resultPrice
+    const budget = conditions.budget;
+    setConditions({
+      ...conditions,
+      state : 'ready',
+      budget : budget + result
+    })
+    setTrade({
+      ...trade,
+      enterPrice : 0,
+      orderPrice : 0,
+      fluctuation : 0,
+      lastResult : trade.resultPrice - trade.orderPrice 
+    })
   }
 
   const changeLever = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLeverage(Number(e.target.value))
+    setConditions({
+      ...conditions,
+      leverage : Number(e.target.value)
+    })
   }
 
   const changeLocaleScale = (e: React.ChangeEvent<HTMLInputElement>) => {
     let tmp = Number(e.target.value.replaceAll(',',''));
-    if (isNaN(tmp)) setInputValue('0')
-    else if (tmp >budget)  setInputValue('한도 초과')
+    const budget = conditions.budget
+    if (isNaN(tmp)) setConditions({...conditions, inputValue : '0'})
+    else if (tmp > budget)  setConditions({...conditions, inputValue : '한도초과'})
     else {
-      setInputValue(tmp.toLocaleString());
+      setConditions({...conditions, inputValue : tmp.toLocaleString()})
     }
   }
 
   const bettingRatio = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const budget = conditions.budget
     if (e.currentTarget.innerHTML === '10%') {
-      setInputValue(Math.floor(budget/10).toLocaleString())
+      setConditions({...conditions, inputValue : Math.floor(budget/10).toLocaleString()})
     } else if (e.currentTarget.innerHTML === '25%') {
-      setInputValue(Math.floor(budget/4).toLocaleString())
+      setConditions({...conditions, inputValue : Math.floor(budget/4).toLocaleString()})
     }
      else if (e.currentTarget.innerHTML === '50%') {
-      setInputValue(Math.floor(budget/2).toLocaleString())
+      setConditions({...conditions, inputValue : Math.floor(budget/2).toLocaleString()})
     }
      else if (e.currentTarget.innerHTML === '100%') {
-      setInputValue(Math.floor(budget).toLocaleString())
+      setConditions({...conditions, inputValue : Math.floor(budget).toLocaleString()})
     }
   }
 
   useEffect(()=>{
-    setCondition('ready')
-    setBudget(money => money+resultPrice)
-    setEnterPrice(undefined)
-    if (orderPrice) {
-      setLastResult(resultPrice-orderPrice)
-    }
+    const result = trade.resultPrice
+    const budget = conditions.budget
+    setConditions({
+      ...conditions,
+      state : 'ready',
+      budget : budget + result
+    })
+    setTrade({
+      ...trade,
+      enterPrice : 0,
+      lastResult : trade.resultPrice - trade.orderPrice
+    })
   }, [coin])
-
 
   return (
     <OrderBox>
@@ -129,17 +185,17 @@ export default function Order () {
       </TypeBox>
       <TypeBox>
         <CategoryInfo>주문가능</CategoryInfo>
-        <div style={{position : 'absolute', right : 10}}> {budget.toLocaleString()} KRW</div>
+        <div style={{position : 'absolute', right : 10}}> {conditions.budget.toLocaleString()} KRW</div>
       </TypeBox>
       <TypeBox>
         <CategoryInfo>레버리지</CategoryInfo>
-        <Range onChange={changeLever} type='range' min={5} max={500} step={5} disabled={condition === 'ready' ? false : true}></Range>
-        <RangeIndex>{leverage}</RangeIndex>
+        <Range onChange={changeLever} type='range' min={5} max={500} step={5} disabled={conditions.state === 'ready' ? false : true}></Range>
+        <RangeIndex>{conditions.leverage}</RangeIndex>
         <RangeTimes>X</RangeTimes>
       </TypeBox>
       <TypeBox character='주문총액'>
         <CategoryInfo>주문총액</CategoryInfo>
-        <InputBox type={"text"} value={inputValue} onChange={changeLocaleScale}></InputBox>
+        <InputBox type={"text"} value={conditions.inputValue} onChange={changeLocaleScale}></InputBox>
         <div>
           <InputButton onClick={bettingRatio}>10%</InputButton>
           <InputButton onClick={bettingRatio} style={{left : 160}}>25%</InputButton>
@@ -148,35 +204,35 @@ export default function Order () {
         </div>
       </TypeBox>
       <TypeBox character="버튼">
-        {condition === 'ready' ? <ShortButton onClick={enterBet}>Short / 하락</ShortButton> : <ShortButton onClick={exitBet} style={{background : 'gray'}}>중지</ShortButton>}
-        {condition === 'ready' ? <LongButton onClick={enterBet}>Long / 상승</LongButton> : <LongButton onClick={exitBet}  style={{background : 'gray'}}>중지</LongButton>}
+        {conditions.state === 'ready' ? <ShortButton onClick={enterBet}>Short / 하락</ShortButton> : <ShortButton onClick={exitBet} style={{background : 'gray'}}>중지</ShortButton>}
+        {conditions.state === 'ready' ? <LongButton onClick={enterBet}>Long / 상승</LongButton> : <LongButton onClick={exitBet}  style={{background : 'gray'}}>중지</LongButton>}
         
       </TypeBox>
       <TypeBox>
         <CategoryInfo>주문금액</CategoryInfo>
-        {enterPrice && <EnterIndex>{orderPrice.toLocaleString()}</EnterIndex>}
+        {trade.orderPrice > 0 && <EnterIndex>{trade.orderPrice.toLocaleString()}</EnterIndex>}
       </TypeBox>
       <TypeBox>
         <CategoryInfo>변동폭</CategoryInfo>
-        {enterPrice && <EnterIndex fluc={fluctuation}>{
-        coinPrice && `${(fluctuation).toFixed(2)}%`
+        {trade.enterPrice > 0 && <EnterIndex fluc={trade.fluctuation}>{
+        `${(trade.fluctuation).toFixed(2)}%`
         }</EnterIndex>}
       </TypeBox>
       <TypeBox>
         <CategoryInfo>수익률</CategoryInfo>
-        {enterPrice && <EnterIndex fluc={fluctuation}>{`${(fluctuation*leverage).toFixed(2)}%`}</EnterIndex>}
+        {trade.enterPrice > 0 && <EnterIndex fluc={trade.fluctuation}>{`${(trade.fluctuation*conditions.leverage).toFixed(2)}%`}</EnterIndex>}
       </TypeBox>
       <TypeBox>
         <CategoryInfo>손익</CategoryInfo>
-        {enterPrice && <EnterIndex fluc={fluctuation}>{(resultPrice-orderPrice).toLocaleString()}</EnterIndex>}
+        {trade.enterPrice > 0 && <EnterIndex fluc={trade.fluctuation}>{(trade.resultPrice-trade.orderPrice).toLocaleString()}</EnterIndex>}
       </TypeBox>
       <TypeBox>
         <CategoryInfo>정산금액</CategoryInfo>
-        {enterPrice && <EnterIndex fluc={fluctuation}>{resultPrice.toLocaleString()}</EnterIndex>}
+        {trade.enterPrice > 0 && <EnterIndex fluc={trade.fluctuation}>{trade.resultPrice.toLocaleString()}</EnterIndex>}
       </TypeBox>
       <TypeBox>
         <CategoryInfo>직전결과</CategoryInfo>
-        {lastResult && <EnterIndex fluc={lastResult}>{lastResult.toLocaleString()}</EnterIndex>}
+        {trade.lastResult !== 0 && <EnterIndex fluc={trade.lastResult}>{trade.lastResult.toLocaleString()}</EnterIndex>}
       </TypeBox>
     </OrderBox>
   )
