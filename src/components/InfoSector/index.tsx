@@ -5,6 +5,7 @@ import CoinSelector from "./CoinSelector";
 import Order from "./InfoOrder";
 // import Chart from "./Chart";
 import CoinInfo from "./InfoCoin";
+import chartApiCall from "./Chart/apiCall";
 
 interface data {
   trade_price : number
@@ -16,7 +17,6 @@ interface data {
   low_price : number,
   lowest_52_week_price : number
 }
-
 
 export default function Main () {
 
@@ -53,6 +53,8 @@ export default function Main () {
       webSocket.close()
     }
   }, [coin])
+
+
 
 
 

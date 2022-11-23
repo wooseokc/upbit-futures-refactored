@@ -1,4 +1,3 @@
-// import axios from "axios";
 import React, {useEffect, useState } from "react";
 // import useInterval from "../../../hooks/useInterval";
 // import { Candle, CandleBox, CandleContainer, CandlePrice, ChartContainer, Line, MinuteSelect, OptionContainer, TopBar, VolumeContainer, VolumePrice } from "./style";
@@ -16,7 +15,12 @@ import React, {useEffect, useState } from "react";
 //   unit : number
 // }
 
-// export default function Chart () {
+// interface chartData {
+//   arr : data[]
+// }
+
+
+// export default function Chart (props : chartData ) {
 //   const [unit, setUnit] = useState('1');
 //   const [chartArr, setChartArr] = useState<data[] | undefined>();
 //   const [top, setTop] = useState(0);
@@ -25,15 +29,6 @@ import React, {useEffect, useState } from "react";
 //   const [volumeTop, setVolumeTop] = useState<number | undefined>();
 //   const [nowOpen, setNowOpen] = useState<number | undefined | null>();
 //   const [coinPrice, setCoinPrice] = useState<number | undefined | null>();
-
-//   // const coin = useAppSelector(state => state.coin.now);
-//   // const price : any = useAppSelector(state => state.coin.price)
-  
-//   async function apicall() {
-//     return await axios.get(`https://api.upbit.com/v1/candles/minutes/${unit}?market=KRW-${coin}&count=100`).then(res => {
-//       setChartArr(res.data.reverse());
-//     });
-//   } 
 
 
 //   useEffect(() => {

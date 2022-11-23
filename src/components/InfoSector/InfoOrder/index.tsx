@@ -47,7 +47,6 @@ export default function Order (props : currentPrice) {
     const orderPrice = trade.orderPrice
     const enterPrice = trade.enterPrice
     const fluctuation = trade.fluctuation
-    console.log(currentPrice)
     if (conditions.state === 'ready') {
       setTrade({
         ...trade,
@@ -85,8 +84,6 @@ export default function Order (props : currentPrice) {
         }) 
       }
     }
-    console.log(trade)
-    
   }, [trade.enterPrice, trade.coinPrice, conditions.state, trade.orderPrice, trade.fluctuation, price])
 
   const enterBet = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -112,7 +109,6 @@ export default function Order (props : currentPrice) {
   }
 
   const exitBet = (e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(trade)
     const result = trade.resultPrice
     const budget = conditions.budget;
     setConditions({
