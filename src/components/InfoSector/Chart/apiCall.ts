@@ -20,7 +20,8 @@ interface exportData {
   open : number,
   trade : number,
   high : number,
-  low : number
+  low : number,
+  volume : number
 }
 
 export default async function chartApiCall(sort : string, coin : string, to? : number) {
@@ -39,7 +40,8 @@ export default async function chartApiCall(sort : string, coin : string, to? : n
         open : item.opening_price,
         trade : item.trade_price,
         high : item.high_price,
-        low : item.low_price
+        low : item.low_price,
+        volume : item.candle_acc_trade_volume
       } 
       exportData.push(tmpObj)
     })

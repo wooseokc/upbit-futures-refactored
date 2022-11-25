@@ -3,12 +3,12 @@ import React, { useEffect, useState } from "react";
 import InfoSection from "./style";
 import CoinSelector from "./CoinSelector";
 import Order from "./InfoOrder";
-// import Chart from "./Chart";
 import CoinInfo from "./InfoCoin";
 import chartApiCall from "./Chart/apiCall";
 import ChartSelector from "./ChartSelector/index";
+import Chart from "./Chart/refactored";
 
-interface data {
+interface Coindata {
   trade_price : number
   change_price : number,
   change_rate : number,
@@ -19,14 +19,26 @@ interface data {
   lowest_52_week_price : number
 }
 
+interface ChartData {
+  time : number,
+  open : number,
+  trade : number,
+  high : number,
+  low : number,
+  volume : number
+}
+
 export default function Main () {
 
   const [coin, setCoin] = useState('BTC')
-  const [price, setPrice] = useState<data>()
+  const [price, setPrice] = useState<Coindata>()
   const [chart, setChart] = useState({
     sort : 'minutes',
-    dataArr : []
+    dataArr : [{time : 0, open : 0, trade : 0, high: 0, low : 0, volume : 0}],
+    count : 100,
+    from : 0
   })
+  const [propsData, setPropsData] = useState<ChartData[]>([])
 
   useEffect(() => {
     const webSocket = new WebSocket('wss://api.upbit.com/websocket/v1');
@@ -60,11 +72,20 @@ export default function Main () {
   }, [coin])
 
   useEffect(() => {
-    const data = chartApiCall('minutes', coin)
+    const data = chartApiCall(chart.sort, coin)
     data.then(res => {
-      console.log(res)
+      setChart({...chart, dataArr : res})
     })
-  }, [])
+  }, [coin, chart.sort])
+
+  useEffect(() => {
+    const originalData = chart.dataArr
+    const count = chart.count
+    const from = chart.from
+    const length = originalData.length
+    const tmpData = originalData.slice(from, from + count).reverse()
+    setPropsData(tmpData)
+  }, [chart.count, chart.from, chart.dataArr])
 
   return (
     <>
@@ -80,11 +101,10 @@ export default function Main () {
          low_price={price.low_price}
          lowest_52_week_price={price.lowest_52_week_price}
          ></CoinInfo>}
-        {/* <Chart></Chart> */}
         <ChartSelector chartChanger={setChart} chartInfo={chart}/>
+        <Chart data={propsData}/>
       </InfoSection>
       <Order price={price?.trade_price} coin={coin}></Order>
     </>
-
   )
 }

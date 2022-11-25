@@ -8,7 +8,9 @@ interface chartChangerProps {
 
 interface chartInfo {
   sort : string,
-  dataArr : any
+  dataArr : any,
+  count : number,
+  from : number
 }
 
 export default function ChartSelector (props : chartChangerProps) {

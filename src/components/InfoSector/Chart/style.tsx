@@ -120,3 +120,4 @@ export const VolumePrice = styled.div`
   justify-content: space-between;
   align-items: left;
 `
+
