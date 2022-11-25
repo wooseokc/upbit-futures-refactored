@@ -3,7 +3,7 @@ import styled from "styled-components";
 
 interface CoinName {
   coin : string,
-  coinChanger : any
+  coinChanger : React.Dispatch<React.SetStateAction<string>>
 }
 
 export default function CoinSelector (props : CoinName) {

@@ -160,6 +160,7 @@ export default function Order (props : currentPrice) {
   useEffect(()=>{
     const result = trade.resultPrice
     const budget = conditions.budget
+    if (conditions.state === 'ready') return
     setConditions({
       ...conditions,
       state : 'ready',

@@ -6,6 +6,7 @@ import Order from "./InfoOrder";
 // import Chart from "./Chart";
 import CoinInfo from "./InfoCoin";
 import chartApiCall from "./Chart/apiCall";
+import ChartSelector from "./ChartSelector/index";
 
 interface data {
   trade_price : number
@@ -22,6 +23,10 @@ export default function Main () {
 
   const [coin, setCoin] = useState('BTC')
   const [price, setPrice] = useState<data>()
+  const [chart, setChart] = useState({
+    sort : 'minutes',
+    dataArr : []
+  })
 
   useEffect(() => {
     const webSocket = new WebSocket('wss://api.upbit.com/websocket/v1');
@@ -54,9 +59,12 @@ export default function Main () {
     }
   }, [coin])
 
-
-
-
+  useEffect(() => {
+    const data = chartApiCall('minutes', coin)
+    data.then(res => {
+      console.log(res)
+    })
+  }, [])
 
   return (
     <>
@@ -73,6 +81,7 @@ export default function Main () {
          lowest_52_week_price={price.lowest_52_week_price}
          ></CoinInfo>}
         {/* <Chart></Chart> */}
+        <ChartSelector chartChanger={setChart} chartInfo={chart}/>
       </InfoSection>
       <Order price={price?.trade_price} coin={coin}></Order>
     </>
