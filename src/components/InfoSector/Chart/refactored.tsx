@@ -9,13 +9,16 @@ interface ChartData {
   trade : number,
   high : number,
   low : number,
-  volume : number
+  volume : number,
+  candle_date_time_kst? : string,
 }
 
 interface importData {
   data : ChartData[],
   count : number,
+  from : number,
   setCount : React.Dispatch<React.SetStateAction<number>>
+  setFrom : React.Dispatch<React.SetStateAction<number>>
 }
 
 export default function Chart (props : importData) {
@@ -24,6 +27,10 @@ export default function Chart (props : importData) {
   const [chartLength, setChartLength] = useState(1)
   const [candles, setCandles] = useState<any>()
   const [volumes, setVolumes] = useState<any>()
+  const [mouseDown, setMouseDown] = useState(false)
+  const [dragTrot, setDragTrot] = useState(true)
+  const [dragStart, setDragStart] = useState(0)
+  const [dragMoved, setDragMoved] = useState(0)
 
   useEffect(() => {
     const data = props.data
@@ -53,7 +60,7 @@ export default function Chart (props : importData) {
         ((value - min) / (max - min)) * height
       )
       return answer
-  }
+    }
 
     const candles = data.map((item, idx) => {
       const width = size.width / chartLength * 0.7;
@@ -67,8 +74,8 @@ export default function Chart (props : importData) {
 
       return (
         <>
-          <Line key={item.high / (time + 1)} width={width/10} height={lineheight} x={x} y={lineY + 10}/>
-          <Candle key={time} width={width} height={height} y={y + 10} x={x - (width / 2)} color={up}/>
+          <Line key={item.high / (time + 1)} width={width < 10000 ? width/15 : 0} height={lineheight ? lineheight : 0} x={Math.abs(x) < 5000 ? x : 0} y={lineY < 1000 ? lineY + 10 : 0}/>
+          <Candle key={time} width={width < 10000 ? width : 0} height={height ? height : 0} y={y < 1000 ? y + 10 : 0} x={Math.abs(width) < 5000 ? x - (width / 2) : 0} color={up}/>
         </>
       )
     })
@@ -85,13 +92,13 @@ export default function Chart (props : importData) {
       const y = item.trade > item.open ? pixelInverter(item.trade, size.chartH) : pixelInverter(item.open, size.chartH)
 
       return (
-        <Volume key={item.volume / (item.time + 1)} width={width} height={height} y={size.voluemH - height} x={x - (width / 2)} color={up}/>
+        <Volume key={item.volume / (item.time + 1)} width={Math.abs(width) < 5000 ? width : 0} height={height < 1000 ? height : 0 } y={height < 10000 ? size.voluemH - height : 0} x={Math.abs(width) < 50000 ? x - (width / 2) : 0} color={up}/>
       )
     })
     
     setCandles(candles)
     setVolumes(volumes)
-  }, [range.max, range.min, chartLength])
+  }, [range.max, range.min, chartLength, props.data])
 
 
   const sizeButton = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -104,9 +111,40 @@ export default function Chart (props : importData) {
     }
   }
 
+  const MouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setMouseDown(true)
+    setDragStart(e.clientX)
+  }
+
+  const MouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    setMouseDown(false)
+  }
+
+  const MouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!mouseDown) return
+    if (dragTrot) {
+      setDragMoved(e.clientX)
+      setDragTrot(false)
+      setTimeout(() => {
+        setDragTrot(true)
+      }, 50)
+    }
+  }
+
+  useEffect(() => {
+    const containerWidth = size.width
+    const start = dragStart
+    const moved = dragMoved
+    const rectWidth = containerWidth / chartLength
+
+    const movingCount = (start - moved) > 0 ? (Math.ceil((start - moved) / rectWidth)) : (Math.floor((start - moved) / rectWidth))
+    setDragStart(moved)
+    if (props.from - movingCount < 0) return
+    props.setFrom(c => c - movingCount)
+  }, [dragMoved])
 
   return (
-    <ChartContainer>
+    <ChartContainer onMouseDown={MouseDown} onMouseLeave={MouseUp} onMouseUp={MouseUp} onMouseMove={MouseMove}>
       <SizeButtonContainer>
         <MinusButton onClick={sizeButton}>-</MinusButton>
         <PlusButton onClick={sizeButton}>+</PlusButton>
@@ -128,6 +166,11 @@ export const ChartContainer = styled.div`
   display : flex;
   flex-wrap : wrap;
   position: relative;
+
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+  user-select:none
 `
 const SizeButtonContainer = styled.div`
   width: 50px;
@@ -186,10 +229,11 @@ export const VolumeContainer = styled.svg`
   border-bottom : 1px solid #d4d6dc;
   border-right : 1px solid #d4d6dc;
 `
-// {color : boolean, key : number, height : number, width : number, y: number, x : number }
+
 const Candle : StyledComponent<'rect', {color : string, key : number, height : number, width : number, y: number, x : number }> = styled.rect`
   fill : ${props => props.color === 'up' ? '#c84a31' : '#1261c4'};
 `
+
 const Line : StyledComponent<'rect', {color : string, key : number, height : number, width : number, y: number, x : number }> = styled.rect`
   fill : black;
   stroke: black;

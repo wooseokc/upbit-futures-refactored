@@ -26,7 +26,8 @@ interface ChartData {
   trade : number,
   high : number,
   low : number,
-  volume : number
+  volume : number,
+  candle_date_time_kst? : string
 }
 
 export default function Main () {
@@ -40,6 +41,7 @@ export default function Main () {
   const [chartCount, setChartCount] = useState(100);
   const [chartFrom, setChartFrom] = useState(0)
   const [propsData, setPropsData] = useState<ChartData[]>([])
+  const [lastData, setLastData] = useState('')
 
   useEffect(() => {
     const webSocket = new WebSocket('wss://api.upbit.com/websocket/v1');
@@ -75,8 +77,10 @@ export default function Main () {
   useEffect(() => {
     const data = chartApiCall(chart.sort, coin)
     data.then(res => {
+      setLastData(res[res.length - 1].candle_date_time_kst)
       setChart({...chart, dataArr : res})
     })
+    setChartFrom(0)
   }, [coin, chart.sort])
 
   useEffect(() => {
@@ -84,6 +88,21 @@ export default function Main () {
     const count = chartCount
     const from = chartFrom
     const length = originalData.length
+
+    if (chartFrom + chartCount * 1.5 > length) {
+      if (lastData === '') return
+      let date = new Date(lastData)
+
+      const srtDate = date.toISOString()
+      const data = chartApiCall(chart.sort, coin, srtDate)
+      data.then(res => {
+        setLastData(res[res.length - 1].candle_date_time_kst)
+        let arr = chart.dataArr
+        arr.push(...res)
+      }).catch(err => {
+        console.log('Error', `${err}더 이상은 크립토 데이터가 없어영`)
+      })
+    }
     const tmpData = originalData.slice(from, from + count).reverse()
     setPropsData(tmpData)
   }, [chartCount, chartFrom, chart.dataArr])
@@ -103,7 +122,7 @@ export default function Main () {
          lowest_52_week_price={price.lowest_52_week_price}
          ></CoinInfo>}
         <ChartSelector chartChanger={setChart} chartInfo={chart}/>
-        <Chart data={propsData} count={chartCount} setCount={setChartCount}/>
+        <Chart data={propsData} count={chartCount} from={chartFrom} setCount={setChartCount} setFrom={setChartFrom}/>
       </InfoSection>
       <Order price={price?.trade_price} coin={coin}></Order>
     </>
