@@ -7,6 +7,7 @@ import CoinInfo from "./InfoCoin";
 import chartApiCall from "./Chart/apiCall";
 import ChartSelector from "./ChartSelector/index";
 import Chart from "./Chart/refactored";
+import { count } from "console";
 
 interface Coindata {
   trade_price : number
@@ -35,9 +36,9 @@ export default function Main () {
   const [chart, setChart] = useState({
     sort : 'minutes',
     dataArr : [{time : 0, open : 0, trade : 0, high: 0, low : 0, volume : 0}],
-    count : 100,
-    from : 0
   })
+  const [chartCount, setChartCount] = useState(100);
+  const [chartFrom, setChartFrom] = useState(0)
   const [propsData, setPropsData] = useState<ChartData[]>([])
 
   useEffect(() => {
@@ -80,12 +81,12 @@ export default function Main () {
 
   useEffect(() => {
     const originalData = chart.dataArr
-    const count = chart.count
-    const from = chart.from
+    const count = chartCount
+    const from = chartFrom
     const length = originalData.length
     const tmpData = originalData.slice(from, from + count).reverse()
     setPropsData(tmpData)
-  }, [chart.count, chart.from, chart.dataArr])
+  }, [chartCount, chartFrom, chart.dataArr])
 
   return (
     <>
@@ -102,7 +103,7 @@ export default function Main () {
          lowest_52_week_price={price.lowest_52_week_price}
          ></CoinInfo>}
         <ChartSelector chartChanger={setChart} chartInfo={chart}/>
-        <Chart data={propsData}/>
+        <Chart data={propsData} count={chartCount} setCount={setChartCount}/>
       </InfoSection>
       <Order price={price?.trade_price} coin={coin}></Order>
     </>
