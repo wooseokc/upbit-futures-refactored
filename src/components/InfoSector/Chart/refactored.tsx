@@ -152,9 +152,23 @@ export default function Chart (props : importData) {
       <CandleContainer>
         {candles}
       </CandleContainer>
+      <CandlePrice>
+        <div>{range.max.toLocaleString()}</div>
+        <div>{(range.min + (range.max-range.min) * 0.75).toLocaleString()}</div>
+        <div>{(range.min + (range.max-range.min) * 0.5).toLocaleString()}</div>
+        <div>{(range.min + (range.max-range.min) * 0.25).toLocaleString()}</div>
+        <div>{range.min.toLocaleString()}</div>
+      </CandlePrice>
       <VolumeContainer>
         {volumes}
       </VolumeContainer>
+      <VolumePrice>
+              <div>{Math.floor(range.vMax)}</div>
+              <div>{Math.floor(range.vMax*0.75)}</div>
+              <div>{Math.floor(range.vMax*0.5)}</div>
+              <div>{Math.floor(range.vMax*0.25)}</div>
+              <div>{0}</div>
+      </VolumePrice>
     </ChartContainer>
   )
 } 
@@ -242,3 +256,34 @@ const Line : StyledComponent<'rect', {color : string, key : number, height : num
 const Volume : StyledComponent<'rect', {color : string, key : number, height : number, width : number, y: number, x : number }> = styled.rect`
   fill : ${props => props.color === 'up' ? '#c84a31' : '#1261c4'};
 `
+
+export const CandlePrice = styled.div`
+  width : 76px;
+  height : 320px;
+  font-size : 10px;
+
+  padding-top : 10px;
+  padding-bottom : 10px;
+  padding-left : 10px;
+
+  display : flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: left;
+`
+export const VolumePrice = styled.div`
+  width : 76px;
+  height : 110px;
+  font-size : 10px;
+
+  position : relative;
+  padding-top : 6px;
+  padding-bottom : 6px;
+  padding-left : 10px;
+  
+  display : flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: left;
+`
+
