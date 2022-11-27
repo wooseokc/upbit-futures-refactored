@@ -50,7 +50,6 @@ export default function Main () {
     webSocket.onopen = () => {
       const str = [{"ticket":"test"},{"type":"ticker","codes":[`KRW-${coin}`]}]
       webSocket.send(JSON.stringify(str))
-      console.log('connect')
     }
 
     webSocket.onmessage = (evt) => {
@@ -70,7 +69,6 @@ export default function Main () {
     }
 
     return () => {
-      console.log('socket close')
       webSocket.close()
     }
   }, [coin])
