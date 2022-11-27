@@ -42,6 +42,7 @@ export default function Main () {
   const [chartFrom, setChartFrom] = useState(0)
   const [propsData, setPropsData] = useState<ChartData[]>([])
   const [lastData, setLastData] = useState('')
+  const [apiState, setApiState] = useState(true)
 
   useEffect(() => {
     const webSocket = new WebSocket('wss://api.upbit.com/websocket/v1');
@@ -91,16 +92,19 @@ export default function Main () {
 
     if (chartFrom + chartCount * 1.5 > length) {
       if (lastData === '') return
+      if (!apiState) return
+      setApiState(false)
       let date = new Date(lastData)
-
       const srtDate = date.toISOString()
       const data = chartApiCall(chart.sort, coin, srtDate)
       data.then(res => {
         setLastData(res[res.length - 1].candle_date_time_kst)
         let arr = chart.dataArr
         arr.push(...res)
+        setApiState(true)
       }).catch(err => {
         console.log('Error', `${err}더 이상은 크립토 데이터가 없어영`)
+        setApiState(true)
       })
     }
     const tmpData = originalData.slice(from, from + count).reverse()
