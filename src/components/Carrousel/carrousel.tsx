@@ -54,7 +54,7 @@ export default function Carrousel (props : props) {
             <Price fluc={change}>{(price).toLocaleString()}</Price>
             <PriceKRW fluc={change}>KRW</PriceKRW>
           </ColorText>
-          <ColorText> 전일대비
+          <ColorText>전일대비
             <FromYesterday fluc={change}>{`${(changeRate * 100).toFixed(2)}%`}</FromYesterday>
             <ChangedPrice fluc={change}>{Math.floor(changePrice).toLocaleString()} </ChangedPrice>
           </ColorText>
@@ -70,25 +70,27 @@ export default function Carrousel (props : props) {
     setMouseDown(true)
     setDragStart(e.clientX)
     setSlideTransition(true)
-
   }
 
-  const MouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (dragTrot) {
-      setMouseDown(false)
-      setDragMoved(e.clientX)
-      setDragTrot(false)
-      setTimeout(() => {
-        setDragTrot(true)
-      }, 500)
-    }
+  const MouseUp = (e: React.MouseEvent<HTMLDivElement>) => {    
+    if (!dragTrot) return
+    setMouseDown(false)
+    setDragMoved(e.clientX)
+    setDragTrot(false)
+    setTimeout(() => {
+      setDragTrot(true)
+    }, 400)
   }
 
   useEffect(() => {
     if (mouseDown === undefined) return
+    if (dragStart === 0 || dragMoved === 0) return
     const start = dragStart
     const moved = dragMoved
+    if (start === moved) return
     setCarrouselCount(start > moved ? c => c + 1 : c => c - 1)
+    setDragStart(0)
+    setDragMoved(0)
   }, [dragMoved])
 
   useEffect(() => {
